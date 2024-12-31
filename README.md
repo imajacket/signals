@@ -1,20 +1,13 @@
 # Signals
 
-The `signals` a robust, dependency-free go library that provides simple, thin, and user-friendly pub-sub kind of in-process event system for your Go applications. It allows you to generate and emit signals (synchronously or asynchronously) as well as manage listeners.
+Forked from https://github.com/maniartech/signals.
 
-💯 **100% test coverage** 💯
-
-⚠️ **Note:** This project is stable, production-ready and complete. It is used in production by [ManiarTech®️](https://maniartech.com) and other companies. Hence, we won't be adding any new features to this project. However, we will continue to maintain it by fixing bugs and keeping it up-to-date with the latest Go versions. We shall however, be adding new features when the need arises and / or requested by the community.
-
-[![GoReportCard example](https://goreportcard.com/badge/github.com/nanomsg/mangos)](https://goreportcard.com/report/github.com/maniartech/signals)
-[![<ManiarTech®️>](https://circleci.com/gh/maniartech/signals.svg?style=shield)](https://circleci.com/gh/maniartech/signals)
-[![made-with-Go](https://img.shields.io/badge/Made%20with-Go-1f425f.svg)](https://go.dev/)
-[![GoDoc reference example](https://img.shields.io/badge/godoc-reference-blue.svg)](https://godoc.org/github.com/maniartech/signals)
+This implementation adds rollback to the signal. If an error is detected during the handling, provided rollback methods will be called.
 
 ## Installation
 
 ```bash
-go get github.com/maniartech/signals
+go get github.com/imajacket/signals
 ```
 
 ## Usage
@@ -25,7 +18,7 @@ package main
 import (
   "context"
   "fmt"
-  "github.com/maniartech/signals"
+  "github.com/imajacket/signals"
 )
 
 var RecordCreated = signals.New[Record]()
@@ -35,19 +28,22 @@ var RecordDeleted = signals.New[Record]()
 func main() {
 
   // Add a listener to the RecordCreated signal
-  RecordCreated.AddListener(func(ctx context.Context, record Record) {
+  RecordCreated.AddListener(func(ctx context.Context, record Record) error {
     fmt.Println("Record created:", record)
-  }, "key1") // <- Key is optional useful for removing the listener later
+	return nil
+  }, nil, "key1") // <- Key is optional useful for removing the listener later
 
   // Add a listener to the RecordUpdated signal
-  RecordUpdated.AddListener(func(ctx context.Context, record Record) {
+  RecordUpdated.AddListener(func(ctx context.Context, record Record) error {
     fmt.Println("Record updated:", record)
+	return nil
   })
 
   // Add a listener to the RecordDeleted signal
-  RecordDeleted.AddListener(func(ctx context.Context, record Record) {
+  RecordDeleted.AddListener(func(ctx context.Context, record Record) error {
     fmt.Println("Record deleted:", record)
-  })
+	return nil
+  }, nil)
 
   ctx := context.Background()
 
@@ -62,21 +58,6 @@ func main() {
 }
 ```
 
-## Documentation
-
-[![GoDoc](https://godoc.org/github.com/maniartech/signals?status.svg)](https://godoc.org/github.com/maniartech/signals)
-
 ## License
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-
-## ✨You Need Some Go Experts, Right? ✨
-
-As a software development firm, ManiarTech® specializes in Golang-based projects. Our team has an in-depth understanding of Enterprise Process Automation, Open Source, and SaaS. Also, we have extensive experience porting code from Python and Node.js to Golang. We have a team of Golang experts here at ManiarTech® that is well-versed in all aspects of the language and its ecosystem.
-At ManiarTech®, we have a team of Golang experts who are well-versed in all facets of the technology.
-
-In short, if you're looking for experts to assist you with Golang-related projects, don't hesitate to get in touch with us. Send an email to <contact@maniartech.com> to get in touch.
-
-## 👉🏼 Do you consider yourself an "Expert Golang Developer"? 👈🏼
-
-If so, you may be interested in the challenging and rewarding work that is waiting for you. Use <careers@maniartech.com> to submit your resume.

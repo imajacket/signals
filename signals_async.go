@@ -2,6 +2,7 @@ package signals
 
 import (
 	"context"
+	"errors"
 	"sync"
 )
 
@@ -18,6 +19,28 @@ type AsyncSignal[T any] struct {
 	mu sync.Mutex
 }
 
+type errorList struct {
+	errors []error
+
+	mu sync.Mutex
+}
+
+func (e *errorList) add(err error) {
+	e.mu.Lock()
+	e.errors = append(e.errors, err)
+	e.mu.Unlock()
+}
+
+func (e *errorList) error() bool {
+	for _, err := range e.errors {
+		if err != nil {
+			return true
+		}
+	}
+
+	return false
+}
+
 // Emit notifies all subscribers of the signal and passes the payload in a
 // asynchronous way.
 //
@@ -32,25 +55,46 @@ type AsyncSignal[T any] struct {
 // Example:
 //
 //	signal := signals.New[string]()
-//	signal.AddListener(func(ctx context.Context, payload string) {
+//	signal.AddListener(func(ctx context.Context, payload string) error {
 //		// Listener implementation
 //		// ...
-//	})
+//	}, nil)
 //
 //	signal.Emit(context.Background(), "Hello, world!")
-func (s *AsyncSignal[T]) Emit(ctx context.Context, payload T) {
+func (s *AsyncSignal[T]) Emit(ctx context.Context, payload T) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	var wg sync.WaitGroup
+	errCh := errorList{
+		errors: make([]error, len(s.subscribers)),
+	}
 
 	for _, sub := range s.subscribers {
 		wg.Add(1)
-		go func(listener func(context.Context, T)) {
+		go func(handler func(context.Context, T) error) {
 			defer wg.Done()
-			listener(ctx, payload)
-		}(sub.listener)
+			err := handler(ctx, payload)
+			errCh.add(err)
+
+		}(sub.listener.handler)
 	}
 
 	wg.Wait()
+
+	if !errCh.error() {
+		return nil
+	}
+
+	for _, sub := range s.subscribers {
+		wg.Add(1)
+		go func(handler func(context.Context, T) error) {
+			defer wg.Done()
+			_ = handler(ctx, payload)
+		}(sub.listener.rollback)
+	}
+
+	wg.Wait()
+
+	return errors.New("there was an error emitting signal, rollback was called")
 }

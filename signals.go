@@ -13,14 +13,14 @@ type Signal[T any] interface {
 	//
 	// Example:
 	//	signal := signals.New[int]()
-	//	signal.AddListener(func(ctx context.Context, payload int) {
+	//	signal.AddListener(func(ctx context.Context, payload int) error  {
 	//		// Listener implementation
 	//		// ...
-	//	})
+	//	}, nil)
 	//	signal.Emit(context.Background(), 42)
-	Emit(ctx context.Context, payload T)
+	Emit(ctx context.Context, payload T) error
 
-	// AddListener adds a listener to the signal.
+	// AddListener adds a listener (handler and rollback) to the signal.
 	//
 	// The listener will be called whenever the signal is emitted. It returns the
 	// number of subscribers after the listener was added. It accepts an optional key
@@ -30,12 +30,12 @@ type Signal[T any] interface {
 	//
 	// Example:
 	//	signal := signals.NewSync[int]()
-	//	count := signal.AddListener(func(ctx context.Context, payload int) {
+	//	count := signal.AddListener(func(ctx context.Context, payload int) error {
 	//		// Listener implementation
 	//		// ...
-	//	})
+	//	}, nil)
 	//	fmt.Println("Number of subscribers after adding listener:", count)
-	AddListener(handler SignalListener[T], key ...string) int
+	AddListener(handler, rollback SignalListener[T], key ...string) int
 
 	// RemoveListener removes a listener from the signal.
 	//
@@ -44,10 +44,10 @@ type Signal[T any] interface {
 	//
 	// Example:
 	//	signal := signals.NewSync[int]()
-	//	signal.AddListener(func(ctx context.Context, payload int) {
+	//	signal.AddListener(func(ctx context.Context, payload int) error {
 	//		// Listener implementation
 	//		// ...
-	//	}, "key1")
+	//	}, nil,  "key1")
 	//	count := signal.RemoveListener("key1")
 	//	fmt.Println("Number of subscribers after removing listener:", count)
 	RemoveListener(key string) int
@@ -60,10 +60,10 @@ type Signal[T any] interface {
 	//
 	// Example:
 	//	signal := signals.New[int]()
-	//	signal.AddListener(func(ctx context.Context, payload int) {
+	//	signal.AddListener(func(ctx context.Context, payload int) error {
 	//		// Listener implementation
 	//		// ...
-	//	})
+	//	}, nil)
 	//	signal.Reset() // Removes all listeners
 	//	fmt.Println("Number of subscribers after resetting:", signal.Len())
 	Reset()
@@ -75,10 +75,10 @@ type Signal[T any] interface {
 	//
 	// Example:
 	//	signal := signals.NewSync[int]()
-	//	signal.AddListener(func(ctx context.Context, payload int) {
+	//	signal.AddListener(func(ctx context.Context, payload int) error {
 	//		// Listener implementation
 	//		// ...
-	//	})
+	//	}, nil)
 	//	fmt.Println("Number of subscribers:", signal.Len())
 	Len() int
 
@@ -90,10 +90,10 @@ type Signal[T any] interface {
 	// Example:
 	//	signal := signals.New[int]()
 	//	fmt.Println("Is signal empty?", signal.IsEmpty()) // Should print true
-	//	signal.AddListener(func(ctx context.Context, payload int) {
+	//	signal.AddListener(func(ctx context.Context, payload int) error {
 	//		// Listener implementation
 	//		// ...
-	//	})
+	//	}, nil)
 	//	fmt.Println("Is signal empty?", signal.IsEmpty()) // Should print false
 	IsEmpty() bool
 }

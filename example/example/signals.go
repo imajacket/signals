@@ -1,6 +1,6 @@
 package example
 
-import "github.com/maniartech/signals"
+import "github.com/imajacket/signals"
 
 // Asynchonous signals
 var RecordCreated = signals.New[Record]()

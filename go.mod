@@ -1,3 +1,3 @@
-module github.com/maniartech/signals
+module github.com/imajacket/signals
 
-go 1.21
+go 1.23

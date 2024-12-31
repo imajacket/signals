@@ -1,6 +1,9 @@
 package signals
 
-import "context"
+import (
+	"context"
+	"errors"
+)
 
 // SyncSignal is a struct that implements the Signal interface.
 // It provides a synchronous way of notifying all subscribers of a signal.
@@ -23,6 +26,7 @@ type SyncSignal[T any] struct {
 // called synchronously, one after the other.
 //
 // Example:
+//
 //	signal := signals.NewSync[string]()
 //	signal.AddListener(func(ctx context.Context, payload string) {
 //		// Listener implementation
@@ -30,8 +34,27 @@ type SyncSignal[T any] struct {
 //	})
 //
 //	signal.Emit(context.Background(), "Hello, world!")
-func (s *SyncSignal[T]) Emit(ctx context.Context, payload T) {
-	for _, sub := range s.subscribers {
-		sub.listener(ctx, payload)
+func (s *SyncSignal[T]) Emit(ctx context.Context, payload T) error {
+	count := -1
+	for index, sub := range s.subscribers {
+		err := sub.listener.handler(ctx, payload)
+		if err != nil {
+			count = index
+			break
+		}
 	}
+
+	if count == -1 {
+		return nil
+	}
+
+	for index, sub := range s.subscribers {
+		_ = sub.listener.rollback(ctx, payload)
+
+		if index == count {
+			break
+		}
+	}
+
+	return errors.New("there was an error emitting signal, rollback was called")
 }
