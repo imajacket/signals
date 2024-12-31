@@ -37,7 +37,7 @@ func main() {
   RecordUpdated.AddListener(func(ctx context.Context, record Record) error {
     fmt.Println("Record updated:", record)
 	return nil
-  })
+  }, nil)
 
   // Add a listener to the RecordDeleted signal
   RecordDeleted.AddListener(func(ctx context.Context, record Record) error {
